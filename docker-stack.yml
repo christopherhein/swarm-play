@@ -1,0 +1,72 @@
+version: '3.3'
+services:
+
+  tracks:
+    image: christopherhein/mx-tracks:latest
+    ports:
+      - "4567"
+    networks:
+      - services
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+
+  laptimes:
+    image: christopherhein/mx-laptimes:latest
+    ports:
+      - "5000"
+    networks:
+      - services
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+
+  gateway:
+    image: christopherhein/mx-gateway:latest
+    ports:
+      - 4000:4000
+    networks:
+      - frontend
+      - services
+    depends_on:
+      - laptimes
+      - tracks
+    environment:
+      - LAPTIMES_HOST=laptimes
+      - LAPTIMES_PORT=5000
+      - TRACKS_HOST=tracks
+      - TRACKS_PORT=4567
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+
+  webapp:
+    image: christopherhein/mx-webapp:latest
+    ports:
+      - 80:8080
+    networks:
+      - frontend
+      - services
+    depends_on:
+      - laptimes
+      - tracks
+    environment:
+      - LAPTIMES_HOST=laptimes
+      - LAPTIMES_PORT=5000
+      - TRACKS_HOST=tracks
+      - TRACKS_PORT=4567
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+
+networks:
+  frontend:
+  services:
